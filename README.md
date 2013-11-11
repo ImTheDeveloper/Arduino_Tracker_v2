@@ -1,4 +1,4 @@
-Car_Tracker_V2 (Version 1 was too much of a headache so lets ignore it)
+Arduino_Tracker_v2 (Version 1 was too much of a headache so lets ignore it)
 ==============
 GPS Tracker Built Using:
 
