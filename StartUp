@@ -1,0 +1,12 @@
+
+void setup()
+{
+  
+}
+
+void loop()
+{
+Startup_SMS();
+Send_SMS("HAI");
+while(1) { }
+}
