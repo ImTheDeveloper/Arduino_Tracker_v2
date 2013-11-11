@@ -1,0 +1,77 @@
+#include <AltSoftSerial.h>
+#include <Adafruit_GPS.h>
+AltSoftSerial mySerial(3, 2);
+Adafruit_GPS GPS(&mySerial);
+
+//Definitions
+#define GPSECHO  false
+
+//Declarations
+boolean usingInterrupt = false;
+void useInterrupt(boolean); // Func prototype keeps Arduino 0023 happy
+int GPSEnablePin = 7; //Set digital pin number to be linked to gps enable pin. This allows GPS to be powered on and off by setting HIGH/LOW
+uint32_t timer = millis();
+int retry_counter //Counter to try and get a fix
+
+void Start_GPS()
+{
+  GPS.begin(9600);
+  GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
+  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);   // 1 Hz update rate
+  useInterrupt(true);
+   retry_counter=0; //Set to 0 for initial setup
+  delay(1000);
+}
+
+
+void Read_GPS()
+{
+   // if a sentence is received, we can check the checksum, parse it...
+  if (GPS.newNMEAreceived()) {
+    if (!GPS.parse(GPS.lastNMEA()))   // this also sets the newNMEAreceived() flag to false
+      return;  // we can fail to parse a sentence in which case we should just wait for another
+  }
+  if (strstr(GPS.lastNMEA(), "RMC") && GPS.fix && GPS.fixquality) {
+    digitalWrite(GPSEnablePin,LOW); //Ensure gps is disabled.
+    // if millis() or timer wraps around, we'll just reset it
+    if (timer > millis())  timer = millis();
+    // approximately every 2 seconds or so, print out the current stats
+    if (millis() - timer > 2000) { 
+      timer = millis(); // reset the timer
+      
+      Serial.println(GPS.latitude);
+      delay(1000); //Delay added to allow for ET.sendData() to fully communicate before falling back to sleep. Slave is set to 250ms for read loop this gives us atleast 4 attempts
+      retry_counter=0; //Re-set the rety counter so we go round the loop again
+     
+    }
+  }
+}
+
+
+void useInterrupt(boolean v) {
+  if (v) {
+    // Timer0 is already used for millis() - we'll just interrupt somewhere
+    // in the middle and call the "Compare A" function above
+    OCR0A = 0xAF;
+    TIMSK0 |= _BV(OCIE0A);
+    usingInterrupt = true;
+  } 
+  else {
+    // do not call the interrupt function COMPA anymore
+    TIMSK0 &= ~_BV(OCIE0A);
+    usingInterrupt = false;
+  }
+}
+
+
+SIGNAL(TIMER0_COMPA_vect) {
+  // Interrupt is called once a millisecond, looks for any new GPS data, and stores it
+  char c = GPS.read();
+  // if you want to debug, this is a good time to do it!
+#ifdef UDR0
+  if (GPSECHO)
+    if (c) UDR0 = c;  
+  // writing direct to UDR0 is much much faster than Serial.print 
+  // but only one character can be written at a time. 
+#endif
+}
