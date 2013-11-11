@@ -38,7 +38,7 @@ void Startup_SMS()
 
 void Send_SMS(char* Input)
 {
-  sms.beginSMS("+447817794740");
+  sms.beginSMS("+44xxxxxxxxxxxxx");
   sms.print(Input);
   sms.endSMS(); 
  // Serial.println("\nCOMPLETE!\n");
