@@ -1,51 +1,92 @@
+// Test code for Adafruit GPS modules using MTK3329/MTK3339 driver
+//
+// This code shows how to listen to the GPS module in an interrupt
+// which allows the program to have more 'freedom' - just parse
+// when a new NMEA sentence is available! Then access data when
+// desired.
+//
+// Tested and works great with the Adafruit Ultimate GPS module
+// using MTK33x9 chipset
+//    ------> http://www.adafruit.com/products/746
+// Pick one up today at the Adafruit electronics shop 
+// and help support open source hardware & software! -ada
 #include <AltSoftSerial.h>
 #include <Adafruit_GPS.h>
-AltSoftSerial mySerial(3, 2);
+
+AltSoftSerial mySerial;  //AltSoftSerial ALWAYS uses the following pins:
+                           //
+                           // Board          Transmit  Receive   PWM Unusable
+                           // -----          --------  -------   ------------
+                           // Teensy 2.0         9        10       (none)
+                           // Teensy++ 2.0      25         4       26, 27
+                           // Arduino Uno        9         8         10
+                           // Arduino Mega      46        48       44, 45
+                           // Wiring-S           5         6          4
+                           // Sanguino          13        14         12
+
 Adafruit_GPS GPS(&mySerial);
-
-//Definitions
 #define GPSECHO  false
-
-//Declarations
 boolean usingInterrupt = false;
 void useInterrupt(boolean); // Func prototype keeps Arduino 0023 happy
-int GPSEnablePin = 7; //Set digital pin number to be linked to gps enable pin. This allows GPS to be powered on and off by setting HIGH/LOW
 uint32_t timer = millis();
-int retry_counter //Counter to try and get a fix
 
-void Start_GPS()
+void Setup_GPS()  
 {
+
+ // Serial.begin(115200);
+  Serial.println("Adafruit GPS library basic test!");
+
   GPS.begin(9600);
   GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
   GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);   // 1 Hz update rate
   useInterrupt(true);
-   retry_counter=0; //Set to 0 for initial setup
-  delay(1000);
 }
 
 
-void Read_GPS()
+void Get_GPS()                     
 {
-   // if a sentence is received, we can check the checksum, parse it...
+  
   if (GPS.newNMEAreceived()) {
     if (!GPS.parse(GPS.lastNMEA()))   // this also sets the newNMEAreceived() flag to false
       return;  // we can fail to parse a sentence in which case we should just wait for another
-  }
-  if (strstr(GPS.lastNMEA(), "RMC") && GPS.fix && GPS.fixquality) {
-    digitalWrite(GPSEnablePin,LOW); //Ensure gps is disabled.
+  } 
+  
     // if millis() or timer wraps around, we'll just reset it
-    if (timer > millis())  timer = millis();
-    // approximately every 2 seconds or so, print out the current stats
-    if (millis() - timer > 2000) { 
-      timer = millis(); // reset the timer
+  if (timer > millis())  timer = millis();
+
+  // approximately every 2 seconds or so, print out the current stats
+  if (millis() - timer > 2000) { 
+    timer = millis(); // reset the timer
+  
+   Serial.print("\nTime: ");
+    Serial.print(GPS.hour, DEC); Serial.print(':');
+    Serial.print(GPS.minute, DEC); Serial.print(':');
+    Serial.print(GPS.seconds, DEC); Serial.print('.');
+    Serial.println(GPS.milliseconds);
+    Serial.print("Date: ");
+    Serial.print(GPS.day, DEC); Serial.print('/');
+    Serial.print(GPS.month, DEC); Serial.print("/20");
+    Serial.println(GPS.year, DEC);
+    Serial.print("Fix: "); Serial.print((int)GPS.fix);
+    Serial.print(" quality: "); Serial.println((int)GPS.fixquality); 
+    if (GPS.fix) {
+      Serial.print("Location: ");
+      Serial.print(GPS.latitude, 4); Serial.print(GPS.lat);
+      Serial.print(", "); 
+      Serial.print(GPS.longitude, 4); Serial.println(GPS.lon);
       
-      Serial.println(GPS.latitude);
-      delay(1000); //Delay added to allow for ET.sendData() to fully communicate before falling back to sleep. Slave is set to 250ms for read loop this gives us atleast 4 attempts
-      retry_counter=0; //Re-set the rety counter so we go round the loop again
-     
+      Serial.print("Speed (knots): "); Serial.println(GPS.speed);
+      Serial.print("Angle: "); Serial.println(GPS.angle);
+      Serial.print("Altitude: "); Serial.println(GPS.altitude);
+      Serial.print("Satellites: "); Serial.println((int)GPS.satellites);
     }
   }
 }
+
+
+// ***************************************
+// Custom Functions
+// ***************************************
 
 
 void useInterrupt(boolean v) {
