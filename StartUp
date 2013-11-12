@@ -1,12 +1,23 @@
 
+
+
+
 void setup()
 {
-  
+  Serial.begin(9600);
+  while (!Serial) {
+    ; // wait for serial port to connect. Needed for Leonardo only
+  }
 }
 
 void loop()
 {
-Startup_SMS();
-Send_SMS("HAI");
-while(1) { }
+//Startup_SMS();
+//Send_SMS("HAI");
+Setup_GPS();
+
+while(1) { 
+Get_GPS();
+delay(1000);
+}
 }
