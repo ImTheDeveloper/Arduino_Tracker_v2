@@ -34,8 +34,8 @@ void Startup_SMS()
   Serial.println("GSM initialized");
 }
 
-//void Send_SMS(char* Input)
-void Send_SMS(String Input)
+void Send_SMS(char* Input)
+//void Send_SMS(String Input)
 {
   sms.beginSMS("+xxxxxxxxxxx");
   sms.print(Input);
