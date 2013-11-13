@@ -32,7 +32,7 @@ uint32_t timer = millis();
 
 void Setup_GPS()  
 {
-
+GPS_Fix=false; //Gps fix variable set to nothing to get started
  // Serial.begin(115200);
   Serial.println("Adafruit GPS library basic test!");
 
@@ -42,8 +42,17 @@ void Setup_GPS()
   useInterrupt(true);
 }
 
+void Get_GPS()
+{
+  while(!GPS_Fix) { 
+    Run_GPS();
+    delay(1000);
+  }
+GPS_Fix=false;
+}
 
-void Get_GPS()                     
+
+void Run_GPS()                     
 {
   
   if (GPS.newNMEAreceived()) {
@@ -70,15 +79,21 @@ void Get_GPS()
     Serial.print("Fix: "); Serial.print((int)GPS.fix);
     Serial.print(" quality: "); Serial.println((int)GPS.fixquality); 
     if (GPS.fix) {
-      Serial.print("Location: ");
-      Serial.print(GPS.latitude, 4); Serial.print(GPS.lat);
-      Serial.print(", "); 
-      Serial.print(GPS.longitude, 4); Serial.println(GPS.lon);
+     decDegLat = convertDegMinToDecDeg(GPS.latitude);  //GPS
+      decDegLong = convertDegMinToDecDeg(GPS.longitude); //GPS
       
-      Serial.print("Speed (knots): "); Serial.println(GPS.speed);
-      Serial.print("Angle: "); Serial.println(GPS.angle);
-      Serial.print("Altitude: "); Serial.println(GPS.altitude);
-      Serial.print("Satellites: "); Serial.println((int)GPS.satellites);
+       
+      
+      GPS_Fix=true;
+//      Serial.print("Location: ");
+//      Serial.print(GPS.latitude, 4); Serial.print(GPS.lat);
+//      Serial.print(", "); 
+//      Serial.print(GPS.longitude, 4); Serial.println(GPS.lon);
+//      
+//      Serial.print("Speed (knots): "); Serial.println(GPS.speed);
+//      Serial.print("Angle: "); Serial.println(GPS.angle);
+//      Serial.print("Altitude: "); Serial.println(GPS.altitude);
+//      Serial.print("Satellites: "); Serial.println((int)GPS.satellites);
     }
   }
 }
@@ -116,3 +131,17 @@ SIGNAL(TIMER0_COMPA_vect) {
   // but only one character can be written at a time. 
 #endif
 }
+
+ double convertDegMinToDecDeg (float degMin) {
+      double min = 0.0;
+      double decDeg = 0.0;
+     
+      //get the minutes, fmod() requires double
+      min = fmod((double)degMin, 100.0);
+     
+      //rebuild coordinates in decimal degrees
+      degMin = (int) ( degMin / 100 );
+      decDeg = degMin + ( min / 60 );
+     
+      return decDeg;
+    }
