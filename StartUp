@@ -1,9 +1,16 @@
 
-
-
+//Global Variables
+boolean GPS_Fix;
+double decDegLat;
+double decDegLong;
+char longitude [20];
+char latitude [20];
+int GPS_Pin_Enable=4;
 
 void setup()
 {
+  pinMode(GPS_Pin_Enable,OUTPUT); //Set out GPS_Pin_Enable as an output
+  digitalWrite(GPS_Pin_Enable,LOW);//Turn Off gps
   Serial.begin(9600);
   while (!Serial) {
     ; // wait for serial port to connect. Needed for Leonardo only
@@ -12,12 +19,16 @@ void setup()
 
 void loop()
 {
-//Startup_SMS();
-//Send_SMS("HAI");
-Setup_GPS();
+digitalWrite(GPS_Pin_Enable,HIGH);//Turn on GPS
+Setup_GPS(); //Setup the GPS Environment
+Get_GPS(); //Get GPS Data
+digitalWrite(GPS_Pin_Enable,LOW);//Turn Off gps
+//Turn On SMS
+Startup_SMS(); //Setup the SMS Environment
 
-while(1) { 
-Get_GPS();
-delay(1000);
-}
+Send_SMS(dtostrf (decDegLong, 10, 4, longitude)+'yes'); //Send our SMS
+//Turn Off SMS
+Serial.println("Done!"); //Completed
+//Sleep for a while then loop again.
+while(1){};
 }
