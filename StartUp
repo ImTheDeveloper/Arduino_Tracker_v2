@@ -3,8 +3,11 @@
 boolean GPS_Fix;
 double decDegLat;
 double decDegLong;
-char longitude [20];
-char latitude [20];
+char mySmsString[30] = "";
+char mySmsStringLat[10]="";//[11] = "";
+char mySmsStringLon[10]="";//[11] = "";
+char mySmsStringBearLat;//;
+char mySmsStringBearLon;//;
 int GPS_Pin_Enable=4;
 
 void setup()
@@ -19,16 +22,24 @@ void setup()
 
 void loop()
 {
+  
 digitalWrite(GPS_Pin_Enable,HIGH);//Turn on GPS
 Setup_GPS(); //Setup the GPS Environment
 Get_GPS(); //Get GPS Data
 digitalWrite(GPS_Pin_Enable,LOW);//Turn Off gps
-//Turn On SMS
-Startup_SMS(); //Setup the SMS Environment
 
-Send_SMS(dtostrf (decDegLong, 10, 4, longitude)+'yes'); //Send our SMS
+sprintf(mySmsString,"%s",mySmsStringLat,mySmsStringLon);
+mySmsString[21]=mySmsStringBearLat;
+mySmsString[22]=mySmsStringBearLon;
+//mySmsString = "testing";
+//Turn On SMS
+//Startup_SMS(); //Setup the SMS Environment
+//Send_SMS(mySmsString); //Send our SMS
+
+
+Serial.println(mySmsString);
 //Turn Off SMS
-Serial.println("Done!"); //Completed
+//Serial.println("Done!"); //Completed
 //Sleep for a while then loop again.
 while(1){};
 }
