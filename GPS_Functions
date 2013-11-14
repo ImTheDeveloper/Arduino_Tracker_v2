@@ -34,7 +34,7 @@ void Setup_GPS()
 {
 GPS_Fix=false; //Gps fix variable set to nothing to get started
  // Serial.begin(115200);
-  Serial.println("Adafruit GPS library basic test!");
+  Serial.println(F("Adafruit GPS library basic test!"));
 
   GPS.begin(9600);
   GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
@@ -66,34 +66,16 @@ void Run_GPS()
   // approximately every 2 seconds or so, print out the current stats
   if (millis() - timer > 2000) { 
     timer = millis(); // reset the timer
-  
-   Serial.print("\nTime: ");
-    Serial.print(GPS.hour, DEC); Serial.print(':');
-    Serial.print(GPS.minute, DEC); Serial.print(':');
-    Serial.print(GPS.seconds, DEC); Serial.print('.');
-    Serial.println(GPS.milliseconds);
-    Serial.print("Date: ");
-    Serial.print(GPS.day, DEC); Serial.print('/');
-    Serial.print(GPS.month, DEC); Serial.print("/20");
-    Serial.println(GPS.year, DEC);
-    Serial.print("Fix: "); Serial.print((int)GPS.fix);
-    Serial.print(" quality: "); Serial.println((int)GPS.fixquality); 
+
+ Serial.println(F("Searching.."));
+ Serial.println((int)GPS.fix);
     if (GPS.fix) {
-     decDegLat = convertDegMinToDecDeg(GPS.latitude);  //GPS
-      decDegLong = convertDegMinToDecDeg(GPS.longitude); //GPS
-      
-       
-      
-      GPS_Fix=true;
-//      Serial.print("Location: ");
-//      Serial.print(GPS.latitude, 4); Serial.print(GPS.lat);
-//      Serial.print(", "); 
-//      Serial.print(GPS.longitude, 4); Serial.println(GPS.lon);
-//      
-//      Serial.print("Speed (knots): "); Serial.println(GPS.speed);
-//      Serial.print("Angle: "); Serial.println(GPS.angle);
-//      Serial.print("Altitude: "); Serial.println(GPS.altitude);
-//      Serial.print("Satellites: "); Serial.println((int)GPS.satellites);
+       dtostrf(GPS.latitude,10,5,mySmsStringLat);
+       dtostrf(GPS.longitude,10,5,mySmsStringLon);
+      mySmsStringBearLon = GPS.lon;
+     mySmsStringBearLat = GPS.lat; 
+ 
+       GPS_Fix=true;
     }
   }
 }
@@ -132,16 +114,3 @@ SIGNAL(TIMER0_COMPA_vect) {
 #endif
 }
 
- double convertDegMinToDecDeg (float degMin) {
-      double min = 0.0;
-      double decDeg = 0.0;
-     
-      //get the minutes, fmod() requires double
-      min = fmod((double)degMin, 100.0);
-     
-      //rebuild coordinates in decimal degrees
-      degMin = (int) ( degMin / 100 );
-      decDeg = degMin + ( min / 60 );
-     
-      return decDeg;
-    }
