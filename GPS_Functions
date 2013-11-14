@@ -70,8 +70,8 @@ void Run_GPS()
  Serial.println(F("Searching.."));
  Serial.println((int)GPS.fix);
     if (GPS.fix) {
-       dtostrf(GPS.latitude,10,5,mySmsStringLat);
-       dtostrf(GPS.longitude,10,5,mySmsStringLon);
+       dtostrf(GPS.latitude,11,4,mySmsStringLat);
+       dtostrf(GPS.longitude,11,4,mySmsStringLon);
       mySmsStringBearLon = GPS.lon;
      mySmsStringBearLat = GPS.lat; 
  
