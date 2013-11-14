@@ -3,9 +3,9 @@
 boolean GPS_Fix;
 double decDegLat;
 double decDegLong;
-char mySmsString[30] = "";
-char mySmsStringLat[10]="";//[11] = "";
-char mySmsStringLon[10]="";//[11] = "";
+char mySmsString[60] = "";
+char mySmsStringLat[11]="";//[11] = "";
+char mySmsStringLon[11]="";//[11] = "";
 char mySmsStringBearLat;//;
 char mySmsStringBearLon;//;
 int GPS_Pin_Enable=4;
@@ -29,8 +29,8 @@ Get_GPS(); //Get GPS Data
 digitalWrite(GPS_Pin_Enable,LOW);//Turn Off gps
 
 sprintf(mySmsString,"%s",mySmsStringLat,mySmsStringLon);
-mySmsString[21]=mySmsStringBearLat;
-mySmsString[22]=mySmsStringBearLon;
+mySmsString[0]=mySmsStringBearLat;
+mySmsString[12]=mySmsStringBearLon;
 //mySmsString = "testing";
 //Turn On SMS
 //Startup_SMS(); //Setup the SMS Environment
