@@ -1,113 +1,40 @@
-// Test code for Adafruit GPS modules using MTK3329/MTK3339 driver
-//
-// This code shows how to listen to the GPS module in an interrupt
-// which allows the program to have more 'freedom' - just parse
-// when a new NMEA sentence is available! Then access data when
-// desired.
-//
-// Tested and works great with the Adafruit Ultimate GPS module
-// using MTK33x9 chipset
-//    ------> http://www.adafruit.com/products/746
-// Pick one up today at the Adafruit electronics shop 
-// and help support open source hardware & software! -ada
-#include <AltSoftSerial.h>
-#include <Adafruit_GPS.h>
 
-AltSoftSerial mySerial;  //AltSoftSerial ALWAYS uses the following pins:
-                           //
-                           // Board          Transmit  Receive   PWM Unusable
-                           // -----          --------  -------   ------------
-                           // Teensy 2.0         9        10       (none)
-                           // Teensy++ 2.0      25         4       26, 27
-                           // Arduino Uno        9         8         10
-                           // Arduino Mega      46        48       44, 45
-                           // Wiring-S           5         6          4
-                           // Sanguino          13        14         12
+//Global Variables
+boolean GPS_Fix;
+double decDegLat;
+double decDegLong;
+char mySmsString[60] = "";
+char mySmsStringLat[11]="";//[11] = "";
+char mySmsStringLon[11]="";//[11] = "";
+char mySmsStringBearLat;//;
+char mySmsStringBearLon;//;
+int GPS_Pin_Enable=4;
 
-Adafruit_GPS GPS(&mySerial);
-#define GPSECHO  false
-boolean usingInterrupt = false;
-void useInterrupt(boolean); // Func prototype keeps Arduino 0023 happy
-uint32_t timer = millis();
-
-void Setup_GPS()  
+void setup()
 {
-GPS_Fix=false; //Gps fix variable set to nothing to get started
-  GPS.begin(9600);
-  GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
-  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);   // 1 Hz update rate
-  useInterrupt(true);
-}
-
-void Get_GPS()
-{
-  while(!GPS_Fix) { 
-    Run_GPS();
-    delay(1000);
-  }
-GPS_Fix=false;
-}
-
-
-void Run_GPS()                     
-{
-  
-  if (GPS.newNMEAreceived()) {
-    if (!GPS.parse(GPS.lastNMEA()))   // this also sets the newNMEAreceived() flag to false
-      return;  // we can fail to parse a sentence in which case we should just wait for another
-  } 
-  
-    // if millis() or timer wraps around, we'll just reset it
-  if (timer > millis())  timer = millis();
-
-  // approximately every 2 seconds or so, print out the current stats
-  if (millis() - timer > 2000) { 
-    timer = millis(); // reset the timer
-
- Serial.println(F("Searching.."));
- Serial.println((int)GPS.fix);
-    if (GPS.fix) {
-       dtostrf(GPS.latitude,11,4,mySmsStringLat);
-       dtostrf(GPS.longitude,11,4,mySmsStringLon);
-      mySmsStringBearLon = GPS.lon;
-     mySmsStringBearLat = GPS.lat; 
- 
-       GPS_Fix=true;
-    }
+  pinMode(GPS_Pin_Enable,OUTPUT); //Set out GPS_Pin_Enable as an output
+  digitalWrite(GPS_Pin_Enable,LOW);//Turn Off gps
+  Serial.begin(9600);
+  while (!Serial) {
+    ; // wait for serial port to connect. Needed for Leonardo only
   }
 }
 
+void loop()
+{
+//Turn on GPS
+digitalWrite(GPS_Pin_Enable,HIGH);
+//Setup the GPS Environment
+Setup_GPS(); 
+//Get GPS Data
+Get_GPS();
+//Turn Off gps
+digitalWrite(GPS_Pin_Enable,LOW);
+//Turn On SMS
+Startup_SMS(); //Setup the SMS Environment
+Send_SMS(mySmsString); //Send our SMS
+//Turn Off SMS
 
-// ***************************************
-// Custom Functions
-// ***************************************
-
-
-void useInterrupt(boolean v) {
-  if (v) {
-    // Timer0 is already used for millis() - we'll just interrupt somewhere
-    // in the middle and call the "Compare A" function above
-    OCR0A = 0xAF;
-    TIMSK0 |= _BV(OCIE0A);
-    usingInterrupt = true;
-  } 
-  else {
-    // do not call the interrupt function COMPA anymore
-    TIMSK0 &= ~_BV(OCIE0A);
-    usingInterrupt = false;
-  }
+//Sleep for a while then loop again.
+while(1){};
 }
-
-
-SIGNAL(TIMER0_COMPA_vect) {
-  // Interrupt is called once a millisecond, looks for any new GPS data, and stores it
-  char c = GPS.read();
-  // if you want to debug, this is a good time to do it!
-#ifdef UDR0
-  if (GPSECHO)
-    if (c) UDR0 = c;  
-  // writing direct to UDR0 is much much faster than Serial.print 
-  // but only one character can be written at a time. 
-#endif
-}
-
