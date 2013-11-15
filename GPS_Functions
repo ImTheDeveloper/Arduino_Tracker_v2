@@ -33,9 +33,6 @@ uint32_t timer = millis();
 void Setup_GPS()  
 {
 GPS_Fix=false; //Gps fix variable set to nothing to get started
- // Serial.begin(115200);
-  Serial.println(F("Adafruit GPS library basic test!"));
-
   GPS.begin(9600);
   GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
   GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);   // 1 Hz update rate
