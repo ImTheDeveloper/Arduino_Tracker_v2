@@ -9,12 +9,10 @@ GSM_SMS sms;
 
 void Startup_SMS()
 {
-  // initialize serial communications and wait for port to open:
-  //Serial.begin(9600);
-  
-  
-  //Serial.println("SMS Messages Sender");
-
+//prepare sms message
+sprintf(mySmsString,"%s",mySmsStringLat,mySmsStringLon);
+mySmsString[0]=mySmsStringBearLat;
+mySmsString[12]=mySmsStringBearLon;
   // connection state
   boolean notConnected = true;
 
@@ -30,15 +28,12 @@ void Startup_SMS()
       delay(1000);
     }
   }
-  
-  Serial.println(F("GSM initialized"));
 }
 
 void Send_SMS(char* Input)
 //void Send_SMS(String Input)
 {
-  sms.beginSMS("+447817794740");
+  sms.beginSMS("+441724411037");
   sms.print(Input);
   sms.endSMS(); 
- Serial.println(F("COMPLETE!"));
 }
