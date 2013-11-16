@@ -1,0 +1,57 @@
+
+// ***************************************
+// Custom Functions
+// ***************************************
+
+
+void useInterrupt(boolean v) {
+  if (v) {
+    // Timer0 is already used for millis() - we'll just interrupt somewhere
+    // in the middle and call the "Compare A" function above
+    OCR0A = 0xAF;
+    TIMSK0 |= _BV(OCIE0A);
+    usingInterrupt = true;
+  } 
+  else {
+    // do not call the interrupt function COMPA anymore
+    TIMSK0 &= ~_BV(OCIE0A);
+    usingInterrupt = false;
+  }
+}
+
+
+SIGNAL(TIMER0_COMPA_vect) {
+  // Interrupt is called once a millisecond, looks for any new GPS data, and stores it
+  char c = GPS.read();
+  // if you want to debug, this is a good time to do it!
+#ifdef UDR0
+  if (GPSECHO)
+    if (c) UDR0 = c;  
+  // writing direct to UDR0 is much much faster than Serial.print 
+  // but only one character can be written at a time. 
+#endif
+}
+
+
+void Send_SMS(char* Input)
+//void Send_SMS(String Input)
+{
+  sms.beginSMS("+441724411037");
+  sms.print(Input);
+  sms.endSMS(); 
+  gsmAccess.shutdown();
+}
+
+double convertDegMinToDecDeg (float degMin) {
+  double min = 0.0;
+  double decDeg = 0.0;
+ 
+  //get the minutes, fmod() requires double
+  min = fmod((double)degMin, 100.0);
+ 
+  //rebuild coordinates in decimal degrees
+  degMin = (int) ( degMin / 100 );
+  decDeg = degMin + ( min / 60 );
+ 
+  return decDeg;
+}
