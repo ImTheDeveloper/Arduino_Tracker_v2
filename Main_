@@ -1,0 +1,122 @@
+//####MATH
+#include <math.h>
+//####SLEEP STUFF
+#include <Sleep_n0m1.h>
+Sleep sleep;
+//####SMS STUFF
+// Include the GSM library
+#include <GSM.h>
+
+#define PINNUMBER ""
+
+// initialize the library instance
+GSM gsmAccess;
+GSM_SMS sms;
+
+
+//####GPS STUFF
+#include <AltSoftSerial.h>
+#include <Adafruit_GPS.h>
+
+AltSoftSerial mySerial;  //AltSoftSerial ALWAYS uses the following pins:
+                           //
+                           // Board          Transmit  Receive   PWM Unusable
+                           // -----          --------  -------   ------------
+                           // Teensy 2.0         9        10       (none)
+                           // Teensy++ 2.0      25         4       26, 27
+                           // Arduino Uno        9         8         10
+                           // Arduino Mega      46        48       44, 45
+                           // Wiring-S           5         6          4
+                           // Sanguino          13        14         12
+
+Adafruit_GPS GPS(&mySerial);
+#define GPSECHO  false
+boolean usingInterrupt = false;
+void useInterrupt(boolean); // Func prototype keeps Arduino 0023 happy
+uint32_t timer = millis();
+
+//####NORMAL STUFF
+//Global Variables
+boolean GPS_Fix;
+double decDegLat;
+double decDegLong;
+char mySmsString[60] = "";
+char mySmsStringLat[11]="";//[11] = "";
+char mySmsStringLon[11]="";//[11] = "";
+char mySmsStringBearLat;//;
+char mySmsStringBearLon;//;
+int GPS_Pin_Enable=12;
+int GPRS_Pin_Enable=11;
+void setup()
+{
+  
+  pinMode(GPS_Pin_Enable,OUTPUT); //Set out GPS_Pin_Enable as an output
+  pinMode(GPRS_Pin_Enable,OUTPUT);//Set out GPRS as an output
+  digitalWrite(GPS_Pin_Enable,LOW);//Turn Off gps
+  digitalWrite(GPRS_Pin_Enable,LOW);//Turn off the GPRS
+}
+
+void loop()
+{
+//########################################Turn on and run gps###################################
+digitalWrite(GPS_Pin_Enable,HIGH); //Turn on the gps
+GPS_Fix=false; //Gps fix variable set to nothing to get started
+GPS.begin(9600);
+GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
+GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);   // 1 Hz update rate
+useInterrupt(true);
+//Get GPS Data
+ while(!GPS_Fix) { 
+     if (GPS.newNMEAreceived()) {
+    if (!GPS.parse(GPS.lastNMEA()))   // this also sets the newNMEAreceived() flag to false
+      return;  // we can fail to parse a sentence in which case we should just wait for another
+  } 
+    // if millis() or timer wraps around, we'll just reset it
+  if (timer > millis())  timer = millis();
+  // approximately every 2 seconds or so, print out the current stats
+  if (millis() - timer > 2000) { 
+    timer = millis(); // reset the timer
+   // if (GPS.fix && GPS.fixquality) {
+  if (GPS.fix){  
+     dtostrf(convertDegMinToDecDeg(GPS.latitude),11,5,mySmsStringLat);
+       dtostrf(convertDegMinToDecDeg(GPS.longitude),11,5,mySmsStringLon);
+       mySmsStringBearLon = GPS.lon;
+       mySmsStringBearLat = GPS.lat; 
+    
+       digitalWrite(GPS_Pin_Enable,LOW); //Turn off the gps
+       GPS_Fix=true;
+    }
+  }
+  }
+GPS_Fix=false;
+
+//########################################Turn on and run SMS###################################
+//Turn On SMS
+gsmOnOff();
+//prepare sms message
+sprintf(mySmsString,"%s",mySmsStringLat,mySmsStringLon);
+mySmsString[0]=mySmsStringBearLat;
+mySmsString[12]=mySmsStringBearLon;
+  // connection state
+  boolean notConnected = true;
+
+  // Start GSM shield
+  // If your SIM has PIN, pass it as a parameter of begin() in quotes
+  while(notConnected)
+  {
+    if(gsmAccess.begin(PINNUMBER)==GSM_READY)
+      notConnected = false;
+    else
+    {
+      //Serial.println("Not connected");
+      delay(1000);
+    }
+  }
+Send_SMS(mySmsString); //Send our SMS
+//Turn Off GPRS
+gsmOnOff();
+//Sleep for a while then loop again.
+sleep.pwrDownMode();
+sleep.sleepDelay(60000);
+//delay(60000);
+}
