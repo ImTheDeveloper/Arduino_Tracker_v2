@@ -36,10 +36,10 @@ SIGNAL(TIMER0_COMPA_vect) {
 void Send_SMS(char* Input)
 //void Send_SMS(String Input)
 {
-  sms.beginSMS("+441724411037");
+  sms.beginSMS("+447817794740");
   sms.print(Input);
   sms.endSMS(); 
-  gsmAccess.shutdown();
+ 
 }
 
 double convertDegMinToDecDeg (float degMin) {
@@ -54,4 +54,12 @@ double convertDegMinToDecDeg (float degMin) {
   decDeg = degMin + ( min / 60 );
  
   return decDeg;
+}
+
+void gsmOnOff() { 
+  // Takes 30 seconds to complete
+  digitalWrite(5, HIGH);   // turn the Phone on
+  delay(5000);
+  digitalWrite(5, LOW); 
+  delay(5000);
 }
