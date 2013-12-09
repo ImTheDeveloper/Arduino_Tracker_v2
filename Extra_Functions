@@ -36,7 +36,7 @@ SIGNAL(TIMER0_COMPA_vect) {
 void Send_SMS(char* Input)
 //void Send_SMS(String Input)
 {
-  sms.beginSMS("+447817794740");
+  sms.beginSMS("+441724411037");
   sms.print(Input);
   sms.endSMS(); 
  
@@ -61,5 +61,5 @@ void gsmOnOff() {
   digitalWrite(5, HIGH);   // turn the Phone on
   delay(5000);
   digitalWrite(5, LOW); 
-  delay(5000);
+  //delay(5000);
 }
