@@ -30,10 +30,10 @@ AltSoftSerial mySerial;  //AltSoftSerial ALWAYS uses the following pins:
                            // Sanguino          13        14         12
 
 Adafruit_GPS GPS(&mySerial);
-#define GPSECHO  false
+#define GPSECHO  true
 boolean usingInterrupt = false;
 void useInterrupt(boolean); // Func prototype keeps Arduino 0023 happy
-uint32_t timer = millis();
+//uint32_t timer = millis();
 
 //####NORMAL STUFF
 //Global Variables
@@ -49,49 +49,62 @@ int GPS_Pin_Enable=12;
 int GPRS_Pin_Enable=11;
 void setup()
 {
-  
-  pinMode(GPS_Pin_Enable,OUTPUT); //Set out GPS_Pin_Enable as an output
+  Serial.begin(9600);
+   pinMode(GPS_Pin_Enable,OUTPUT); //Set out GPS_Pin_Enable as an output
+   delay(2000);
+  GPS.begin(9600);
+  GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
+  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);   // 1 Hz update rate
+digitalWrite(GPS_Pin_Enable,LOW);//Turn Off gps
+  useInterrupt(true);
+ 
   pinMode(GPRS_Pin_Enable,OUTPUT);//Set out GPRS as an output
-  digitalWrite(GPS_Pin_Enable,LOW);//Turn Off gps
+
+  
   digitalWrite(GPRS_Pin_Enable,LOW);//Turn off the GPRS
 }
 
 void loop()
 {
-//########################################Turn on and run gps###################################
+Serial.println(F("Starting up"));
 digitalWrite(GPS_Pin_Enable,HIGH); //Turn on the gps
-GPS_Fix=false; //Gps fix variable set to nothing to get started
-GPS.begin(9600);
-GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
-GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);   // 1 Hz update rate
-useInterrupt(true);
+delay(2000);
+Serial.println(F("Gps up"));
 //Get GPS Data
- while(!GPS_Fix) { 
-     if (GPS.newNMEAreceived()) {
-    if (!GPS.parse(GPS.lastNMEA()))   // this also sets the newNMEAreceived() flag to false
-      return;  // we can fail to parse a sentence in which case we should just wait for another
-  } 
-    // if millis() or timer wraps around, we'll just reset it
-  if (timer > millis())  timer = millis();
-  // approximately every 2 seconds or so, print out the current stats
-  if (millis() - timer > 2000) { 
-    timer = millis(); // reset the timer
-   // if (GPS.fix && GPS.fixquality) {
-  if (GPS.fix){  
-     dtostrf(convertDegMinToDecDeg(GPS.latitude),11,5,mySmsStringLat);
-       dtostrf(convertDegMinToDecDeg(GPS.longitude),11,5,mySmsStringLon);
-       mySmsStringBearLon = GPS.lon;
-       mySmsStringBearLat = GPS.lat; 
-    
-       digitalWrite(GPS_Pin_Enable,LOW); //Turn off the gps
-       GPS_Fix=true;
-    }
-  }
-  }
-GPS_Fix=false;
+GPS_Fix=false; //Gps fix variable set to nothing to get started
+delay(2000);
 
+ while(!GPS_Fix) {
+  if (GPS.newNMEAreceived()) { 
+     if (!GPS.parse(GPS.lastNMEA()))   // this also sets the newNMEAreceived() flag to false
+      return;  // we can fail to parse a sentence in which case we should just wait for another
+  }
+ 
+  
+  if ((strstr(GPS.lastNMEA(), "RMC")) && GPS.fix){  
+     digitalWrite(GPS_Pin_Enable,LOW); //Turn off the gps
+     delay(1000);
+     GPS_Fix=true;
+     dtostrf(convertDegMinToDecDeg(GPS.latitude),11,5,mySmsStringLat);
+     dtostrf(convertDegMinToDecDeg(GPS.longitude),11,5,mySmsStringLon);
+     mySmsStringBearLon = GPS.lon;
+     mySmsStringBearLat = GPS.lat;      
+         Serial.println(F("Fixed!"));
+         Serial.println(F("GPS off"));
+           break;
+    }
+    Serial.print("\nTime: ");
+    Serial.print(GPS.hour, DEC); Serial.print(':');
+    Serial.print(GPS.minute, DEC); Serial.print(':');
+    Serial.print(GPS.seconds, DEC); Serial.print('.');
+    Serial.println(GPS.milliseconds);
+delay(1000);
+}
+
+ 
 //########################################Turn on and run SMS###################################
 //Turn On SMS
+  Serial.println(F("Starting up GSM"));
 gsmOnOff();
 //prepare sms message
 sprintf(mySmsString,"%s",mySmsStringLat,mySmsStringLon);
@@ -112,11 +125,13 @@ mySmsString[12]=mySmsStringBearLon;
       delay(1000);
     }
   }
+    Serial.println(F("Sending sms"));
 Send_SMS(mySmsString); //Send our SMS
 //Turn Off GPRS
 gsmOnOff();
+  Serial.println(F("GSM OFF"));
 //Sleep for a while then loop again.
 sleep.pwrDownMode();
+  Serial.println(F("Sleep"));
 sleep.sleepDelay(60000);
-//delay(60000);
 }
